@@ -36,7 +36,10 @@ def get_request(url):
     agents_idx += 1
 
     #-- reuests
-    resp = curSession.get(url, headers = headers)
+
+    resp = curSession.get(url, headers=headers,
+                          proxies=dict(http='socks5://madaspe@178.154.228.16:9050',
+                                       https='socks5://madaspe@178.154.228.16:9050'))
     resp.encoding = resp.apparent_encoding
     res = resp.text
 
@@ -137,10 +140,8 @@ def find_book(book):
     #----- annotate
     anot = ""
     divs_4 = soup.find_all('div', {'class': 'bc-annotate without-readmore'})
-    #d_4 = divs_4.find_all('div', {'class': 'lenta-card__text-edition-full'})
-    for d in divs_4:
-        anot = d.text
-        break
+    anot = divs_4[0].text
+    
 
     #-- find_rating
 
