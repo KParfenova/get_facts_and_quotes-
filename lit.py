@@ -2,7 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import random
 import json
-
+import wikipedia
 
 #-- get request to site
 
@@ -58,6 +58,10 @@ def get_request(url):
 def find_book(book):
 
     url = f'https://www.livelib.ru/find/works/{book}'
+
+    book2 = book.replace(' ', '+')
+    url = f'https://www.livelib.ru/find/{book2}'
+
     resp = get_request(url)
     if (resp == ""):
         return "","","",""
@@ -113,6 +117,9 @@ def find_book(book):
                     facts.append(p.text)
     if len(facts) != 0:
         r = random.randint(0, len(facts) - 1)
+        fact = facts[r]
+    else:
+        fact = ""
 
     #-- find_plot
 
@@ -127,6 +134,13 @@ def find_book(book):
                 for p in p_s:
                     plot += p.text
                     break
+    #----- annotate
+    anot = ""
+    divs_4 = soup.find_all('div', {'class': 'bc-annotate without-readmore'})
+    #d_4 = divs_4.find_all('div', {'class': 'lenta-card__text-edition-full'})
+    for d in divs_4:
+        anot = d.text
+        break
 
     #-- find_rating
 
@@ -140,7 +154,7 @@ def find_book(book):
     resp = ""
     if len(urls) > 1:
         url_quote = 'https://www.livelib.ru' + urls[1]
-        resp = requests.get(url_quote)
+        resp = get_request(url_quote)
     if (resp == ""):
         return "","","",""
 
@@ -154,9 +168,13 @@ def find_book(book):
             for p in p_s:
                 quotes.append(p.text)
 
-    r1 = random.randint(0, len(quotes) - 1)
+    if len(quotes) !=0:
+        r1 = random.randint(0, len(quotes) - 1)
+        quote = quotes[r1]
+    else:
+        quote = ""
 
-    return facts[r], plot, rating, quotes[r1]
+    return fact, plot, anot, rating, quote
 
 def save_data(data_books):
     with open('data_books.json', 'w', encoding="utf-8") as outfile:
@@ -175,21 +193,20 @@ s = data["data"]["meta"]["_getSrcObsWh6Q9"]["edges"]
 for i in s:
     book_all = i["node"]
     book = book_all["name"]
-    for i in s:
-        book_all = i["node"]
-        book = book_all["name"]
 
-        if book not in data_books.keys():
-            #facts, plot, rating, quote = "", "", "", ""
+    if book not in data_books.keys():
+        #facts, plot, rating, quote = "", "", "", ""
             
-            facts, plot, rating, quote = find_book(book)
-                
-            data_books[str(book)] = { "facts": facts,
-                        "plot": plot,
-                        "rating": rating,
-                        "quote": quote}
-
-save_data(data_books)
+        facts, plot, anot, rating, quote = find_book(book)
+        if plot == "":
+            plot = anot
+            
+        data_books[str(book)] = { "facts": facts,
+                    "plot": plot,
+                    "rating": rating,
+                    "quote": quote}
+        #print(data_books)
+        save_data(data_books)
 
 
 
